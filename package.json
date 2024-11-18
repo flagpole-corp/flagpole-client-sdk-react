@@ -13,7 +13,9 @@
   "author": "Flag Pole",
   "license": "ISC",
   "dependencies": {
+    "@types/react": "^18.3.12",
     "@types/socket.io-client": "^3.0.0",
+    "react": "^18.3.1",
     "socket.io-client": "^4.8.1"
   }
 }
