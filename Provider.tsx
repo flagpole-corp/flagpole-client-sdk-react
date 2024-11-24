@@ -1,9 +1,11 @@
 import React, { FC, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import FeatureFlagContext from "./Context";
+import { FeatureFlag } from "./types";
+
+const SERVER_URI = process.env.SERVER_URI;
 
 export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
-  serverUrl,
   authToken,
   environment = "development",
   children,
@@ -14,7 +16,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const socketInstance = io(serverUrl, {
+    const socketInstance = io(SERVER_URI, {
       auth: authToken ? { token: authToken } : undefined,
       query: { environment },
     });
@@ -60,7 +62,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     return () => {
       socketInstance.disconnect();
     };
-  }, [serverUrl, authToken, environment]);
+  }, [SERVER_URI, authToken, environment]);
 
   const isFeatureEnabled = (flagName: string): boolean => {
     return flags[flagName] ?? false;
