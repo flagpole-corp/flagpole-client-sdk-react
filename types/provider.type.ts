@@ -1,5 +1,6 @@
-interface FeatureFlagProviderProps {
-  authToken?: string;
+export interface FeatureFlagProviderProps {
+  projectId: string;
+  authToken: string;
   environment?: string;
   children: React.ReactNode;
 }

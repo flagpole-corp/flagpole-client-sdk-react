@@ -1,25 +1,67 @@
 import React, { FC, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import axios from "axios";
 import FeatureFlagContext from "./Context";
-import { FeatureFlag } from "./types";
+import { FeatureFlag, FeatureFlagProviderProps } from "./types";
 
-const SERVER_URI = process.env.SERVER_URI;
+const api = axios.create({
+  baseURL: process.env.API_URL || "http://localhost:5000",
+});
 
 export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
+  projectId,
   authToken,
   environment = "development",
   children,
 }): JSX.Element => {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [flags, setFlags] = useState<Record<string, boolean>>({});
+  const [flags, setFlags] = useState<Record<string, FeatureFlag>>({}); // Changed from Record<string, boolean>
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Initial flags fetch
   useEffect(() => {
-    const socketInstance = io(SERVER_URI, {
-      auth: authToken ? { token: authToken } : undefined,
-      query: { environment },
-    });
+    const fetchFlags = async () => {
+      try {
+        const { data } = await api.get<FeatureFlag[]>("/api/feature-flags", {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "x-project-id": projectId,
+          },
+        });
+
+        setFlags(
+          data.reduce((acc, flag) => {
+            if (!flag.environments || flag.environments.includes(environment)) {
+              acc[flag.name] = flag; // Store the whole flag object
+            }
+            return acc;
+          }, {} as Record<string, FeatureFlag>)
+        );
+        setIsLoading(false);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to fetch flags")
+        );
+        setIsLoading(false);
+      }
+    };
+
+    fetchFlags();
+  }, [projectId, authToken, environment]);
+
+  // WebSocket connection handlers
+  useEffect(() => {
+    const socketInstance = io(
+      process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3000",
+      {
+        auth: { token: authToken },
+        query: {
+          environment,
+          projectId,
+        },
+      }
+    );
 
     socketInstance.on("connect", () => {
       console.debug("Connected to feature flag service");
@@ -28,33 +70,35 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
 
     socketInstance.on("connect_error", (err) => {
       console.error("Failed to connect to feature flag service:", err);
-      setError(err);
-    });
-
-    socketInstance.on("featureFlags", (receivedFlags: FeatureFlag[]) => {
-      setFlags(
-        receivedFlags.reduce((acc, flag) => {
-          // Only include flags for the current environment
-          if (!flag.environments || flag.environments.includes(environment)) {
-            acc[flag.name] = flag.isEnabled;
-          }
-          return acc;
-        }, {} as Record<string, boolean>)
+      setError(
+        err instanceof Error ? err : new Error("WebSocket connection failed")
       );
-      setIsLoading(false);
     });
 
     socketInstance.on("featureFlagUpdate", (updatedFlag: FeatureFlag) => {
-      // Only update if the flag applies to the current environment
       if (
-        !updatedFlag.environments ||
-        updatedFlag.environments.includes(environment)
+        updatedFlag.project === projectId &&
+        (!updatedFlag.environments ||
+          updatedFlag.environments.includes(environment))
       ) {
         setFlags((prevFlags) => ({
           ...prevFlags,
-          [updatedFlag.name]: updatedFlag.isEnabled,
+          [updatedFlag.name]: updatedFlag,
         }));
       }
+    });
+
+    socketInstance.on("featureFlagDelete", (flagId: string) => {
+      setFlags((prevFlags) => {
+        const newFlags = { ...prevFlags };
+        const flagName = Object.keys(newFlags).find(
+          (name) => newFlags[name]._id === flagId
+        );
+        if (flagName) {
+          delete newFlags[flagName];
+        }
+        return newFlags;
+      });
     });
 
     setSocket(socketInstance);
@@ -62,10 +106,10 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     return () => {
       socketInstance.disconnect();
     };
-  }, [SERVER_URI, authToken, environment]);
+  }, [projectId, authToken, environment]);
 
   const isFeatureEnabled = (flagName: string): boolean => {
-    return flags[flagName] ?? false;
+    return flags[flagName]?.isEnabled ?? false; // Check isEnabled from the flag object
   };
 
   return (

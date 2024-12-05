@@ -1,6 +1,12 @@
 export interface FeatureFlag {
+  _id: string;
   name: string;
+  description: string;
   isEnabled: boolean;
-  conditions?: Record<string, any>;
-  environments?: string[];
+  project: string;
+  organization: string;
+  conditions: Record<string, any>;
+  environments: string[];
+  createdAt: string;
+  updatedAt: string;
 }
