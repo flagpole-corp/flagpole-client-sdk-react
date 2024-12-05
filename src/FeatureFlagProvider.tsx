@@ -1,16 +1,14 @@
 import React, { FC, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import axios from "axios";
-import FeatureFlagContext from "./Context";
+import { FeatureFlagContext } from "./Context";
 import { FeatureFlag, FeatureFlagProviderProps } from "./types";
-
-const api = axios.create({
-  baseURL: process.env.API_URL || "http://localhost:5000",
-});
+import { DEFAULT_CONFIG } from "./config";
 
 export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
   projectId,
   authToken,
+  organizationId,
   environment = "development",
   children,
 }): JSX.Element => {
@@ -18,6 +16,15 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
   const [flags, setFlags] = useState<Record<string, FeatureFlag>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  const api = axios.create({
+    baseURL: DEFAULT_CONFIG.API_URL,
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      "x-project-id": projectId,
+      "x-organization-id": organizationId,
+    },
+  });
 
   // Initial flags fetch
   useEffect(() => {
@@ -52,24 +59,42 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
 
   // WebSocket connection handlers
   useEffect(() => {
-    const socketInstance = io(
-      process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3000",
-      {
-        auth: { token: authToken },
-        query: {
-          environment,
-          projectId,
-        },
-      }
-    );
+    const wsUrl = DEFAULT_CONFIG.WS_URL;
+    console.log("[FlagPole SDK] WS URL before initialization:", wsUrl);
+
+    const socketOptions = {
+      auth: { token: authToken },
+      query: {
+        environment,
+        projectId,
+      },
+      forceNew: true,
+      path: "/socket.io",
+      transports: ["websocket", "polling"],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 3,
+    };
+
+    console.log("[FlagPole SDK] Socket options:", socketOptions);
+
+    const socketInstance = io(wsUrl, socketOptions);
+
+    socketInstance.on("connecting", (transport) => {
+      console.log("[FlagPole SDK] Connecting with transport:", transport);
+    });
 
     socketInstance.on("connect", () => {
-      console.debug("Connected to feature flag service");
+      console.log("[FlagPole SDK] Connected to WebSocket at:", wsUrl);
+      console.log("[FlagPole SDK] Socket details:", {
+        connected: socketInstance.connected,
+        id: socketInstance.id,
+      });
       setError(null);
     });
 
     socketInstance.on("connect_error", (err) => {
-      console.error("Failed to connect to feature flag service:", err);
+      console.error("[FlagPole SDK] Failed to connect:", err);
       setError(
         err instanceof Error ? err : new Error("WebSocket connection failed")
       );

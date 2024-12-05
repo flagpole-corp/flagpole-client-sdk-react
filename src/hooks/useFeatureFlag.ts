@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import FeatureFlagContext from "../Context";
+import { FeatureFlagContext } from "../Context";
 
 /**
  * Hook to check if a specific feature flag is enabled.

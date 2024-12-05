@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import FeatureFlagContext from "../Context";
+import { FeatureFlagContext } from "../Context";
 
 /**
  * Hook to access all feature flags and related data from the FeatureFlagContext.
@@ -42,7 +42,7 @@ import FeatureFlagContext from "../Context";
  * }
  */
 
-export const useFeatureFlags = () => {
+export function useFeatureFlags() {
   const context = useContext(FeatureFlagContext);
   if (!context) {
     throw new Error(
@@ -50,4 +50,4 @@ export const useFeatureFlags = () => {
     );
   }
   return context;
-};
+}
