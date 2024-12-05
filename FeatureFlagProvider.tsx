@@ -15,7 +15,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
   children,
 }): JSX.Element => {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [flags, setFlags] = useState<Record<string, FeatureFlag>>({}); // Changed from Record<string, boolean>
+  const [flags, setFlags] = useState<Record<string, FeatureFlag>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -33,7 +33,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
         setFlags(
           data.reduce((acc, flag) => {
             if (!flag.environments || flag.environments.includes(environment)) {
-              acc[flag.name] = flag; // Store the whole flag object
+              acc[flag.name] = flag;
             }
             return acc;
           }, {} as Record<string, FeatureFlag>)
@@ -109,7 +109,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
   }, [projectId, authToken, environment]);
 
   const isFeatureEnabled = (flagName: string): boolean => {
-    return flags[flagName]?.isEnabled ?? false; // Check isEnabled from the flag object
+    return flags[flagName]?.isEnabled ?? false;
   };
 
   return (

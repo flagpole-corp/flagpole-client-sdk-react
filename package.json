@@ -1,8 +1,9 @@
 {
-  "name": "flagpole-client-sdk-react",
+  "name": "@flagpole/client-react-sdk",
   "version": "1.0.0",
   "description": "React SDK for integration with FlagPole api.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,8 +11,9 @@
     "type": "git",
     "url": "github.com:flagpole-corp/flagpole-client-sdk-react.git"
   },
-  "author": "Flag Pole",
+  "author": "FlagPole Cloud",
   "license": "ISC",
+  "peerDependencies": {},
   "dependencies": {
     "@types/react": "^18.3.12",
     "@types/socket.io-client": "^3.0.0",
