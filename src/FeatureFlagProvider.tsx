@@ -26,15 +26,31 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     },
   });
 
+  console.log("SDK: Created API instance with config:", {
+    time: new Date().toISOString(),
+    baseURL: api.defaults.baseURL,
+    headers: {
+      projectId,
+      organizationId,
+      auth: authToken.substring(0, 20) + "...", // Only log part of the token
+    },
+    actualHeaders: api.defaults.headers, // See what axios actually set
+  });
+
   // Initial flags fetch
   useEffect(() => {
     const fetchFlags = async () => {
       try {
+        const headers = {
+          Authorization: `Bearer ${authToken}`,
+          "x-project-id": projectId,
+          "x-organization-id": organizationId,
+        };
+
+        console.log("[FlagPole SDK] Request headers:", headers);
+
         const { data } = await api.get<FeatureFlag[]>("/api/feature-flags", {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "x-project-id": projectId,
-          },
+          headers: headers,
         });
 
         setFlags(
@@ -47,6 +63,11 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
         );
         setIsLoading(false);
       } catch (err) {
+        console.error("[FlagPole SDK] Request failed:", {
+          error: err,
+          projectId,
+          organizationId,
+        });
         setError(
           err instanceof Error ? err : new Error("Failed to fetch flags")
         );
@@ -55,7 +76,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     };
 
     fetchFlags();
-  }, [projectId, authToken, environment]);
+  }, [projectId, authToken, environment, organizationId]);
 
   // WebSocket connection handlers
   useEffect(() => {

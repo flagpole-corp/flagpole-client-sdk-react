@@ -1,6 +1,6 @@
 {
   "name": "@flagpole/client-react-sdk",
-  "version": "1.0.0",
+  "version": "1.0.0-dev.1",
   "description": "React SDK for integration with FlagPole api.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,8 @@
     "clean": "rimraf dist",
     "build": "npm run clean && tsc",
     "build:watch": "tsc --watch",
-    "build:debug": "npm run clean && tsc --listFiles --listEmittedFiles --extendedDiagnostics"
+    "build:debug": "npm run clean && tsc --listFiles --listEmittedFiles --extendedDiagnostics",
+    "deploy": "rm -rf dist && npm run build && yalc publish --push"
   },
   "repository": {
     "type": "git",

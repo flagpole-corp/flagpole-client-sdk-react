@@ -1,4 +1,9 @@
+const hour = new Date().getHours();
+const minute = new Date().getMinutes();
+const second = new Date().getSeconds();
+
 console.log("[FlagPole SDK] Loading config module...");
+console.log(`SDK Config loaded! Version ${hour} - ${minute} - ${second}`);
 
 const BASE_URL = "http://localhost:5000";
 console.log("[FlagPole SDK] BASE_URL:", BASE_URL);
