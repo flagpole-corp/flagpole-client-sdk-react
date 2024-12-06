@@ -6,9 +6,7 @@ import { FeatureFlag, FeatureFlagProviderProps } from "./types";
 import { DEFAULT_CONFIG } from "./config";
 
 export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
-  projectId,
-  authToken,
-  organizationId,
+  apiKey,
   environment = "development",
   children,
 }): JSX.Element => {
@@ -20,38 +18,16 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
   const api = axios.create({
     baseURL: DEFAULT_CONFIG.API_URL,
     headers: {
-      Authorization: `Bearer ${authToken}`,
-      "x-project-id": projectId,
-      "x-organization-id": organizationId,
+      "x-api-key": apiKey,
     },
-  });
-
-  console.log("SDK: Created API instance with config:", {
-    time: new Date().toISOString(),
-    baseURL: api.defaults.baseURL,
-    headers: {
-      projectId,
-      organizationId,
-      auth: authToken.substring(0, 20) + "...", // Only log part of the token
-    },
-    actualHeaders: api.defaults.headers, // See what axios actually set
   });
 
   // Initial flags fetch
   useEffect(() => {
     const fetchFlags = async () => {
       try {
-        const headers = {
-          Authorization: `Bearer ${authToken}`,
-          "x-project-id": projectId,
-          "x-organization-id": organizationId,
-        };
-
-        console.log("[FlagPole SDK] Request headers:", headers);
-
-        const { data } = await api.get<FeatureFlag[]>("/api/feature-flags", {
-          headers: headers,
-        });
+        console.log("[FlagPole SDK] Fetching flags with API key");
+        const { data } = await api.get<FeatureFlag[]>("/api/feature-flags/sdk");
 
         setFlags(
           data.reduce((acc, flag) => {
@@ -63,11 +39,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
         );
         setIsLoading(false);
       } catch (err) {
-        console.error("[FlagPole SDK] Request failed:", {
-          error: err,
-          projectId,
-          organizationId,
-        });
+        console.error("[FlagPole SDK] Error fetching flags:", err);
         setError(
           err instanceof Error ? err : new Error("Failed to fetch flags")
         );
@@ -76,18 +48,17 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     };
 
     fetchFlags();
-  }, [projectId, authToken, environment, organizationId]);
+  }, [environment]);
 
-  // WebSocket connection handlers
+  // WebSocket connection
   useEffect(() => {
     const wsUrl = DEFAULT_CONFIG.WS_URL;
     console.log("[FlagPole SDK] WS URL before initialization:", wsUrl);
 
-    const socketOptions = {
-      auth: { token: authToken },
+    const socketInstance = io(wsUrl, {
+      auth: { apiKey }, // Use API key for socket auth
       query: {
         environment,
-        projectId,
       },
       forceNew: true,
       path: "/socket.io",
@@ -95,22 +66,10 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 3,
-    };
-
-    console.log("[FlagPole SDK] Socket options:", socketOptions);
-
-    const socketInstance = io(wsUrl, socketOptions);
-
-    socketInstance.on("connecting", (transport) => {
-      console.log("[FlagPole SDK] Connecting with transport:", transport);
     });
 
     socketInstance.on("connect", () => {
-      console.log("[FlagPole SDK] Connected to WebSocket at:", wsUrl);
-      console.log("[FlagPole SDK] Socket details:", {
-        connected: socketInstance.connected,
-        id: socketInstance.id,
-      });
+      console.log("[FlagPole SDK] Connected to WebSocket");
       setError(null);
     });
 
@@ -123,9 +82,8 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
 
     socketInstance.on("featureFlagUpdate", (updatedFlag: FeatureFlag) => {
       if (
-        updatedFlag.project === projectId &&
-        (!updatedFlag.environments ||
-          updatedFlag.environments.includes(environment))
+        !updatedFlag.environments ||
+        updatedFlag.environments.includes(environment)
       ) {
         setFlags((prevFlags) => ({
           ...prevFlags,
@@ -152,7 +110,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     return () => {
       socketInstance.disconnect();
     };
-  }, [projectId, authToken, environment]);
+  }, [environment]);
 
   const isFeatureEnabled = (flagName: string): boolean => {
     return flags[flagName]?.isEnabled ?? false;
