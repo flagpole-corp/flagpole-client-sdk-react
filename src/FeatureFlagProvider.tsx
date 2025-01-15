@@ -22,27 +22,29 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     },
   });
 
-  // Initial flags fetch
   useEffect(() => {
     const fetchFlags = async () => {
       try {
-        console.log("[FlagPole SDK] Fetching flags with API key");
         const { data } = await api.get<FeatureFlag[]>("/api/feature-flags/sdk");
 
         setFlags(
           data.reduce((acc, flag) => {
-            if (!flag.environments || flag.environments.includes(environment)) {
+            if (
+              !flag.environments?.length ||
+              flag.environments.includes(environment)
+            ) {
               acc[flag.name] = flag;
             }
             return acc;
           }, {} as Record<string, FeatureFlag>)
         );
-        setIsLoading(false);
+        setError(null);
       } catch (err) {
         console.error("[FlagPole SDK] Error fetching flags:", err);
         setError(
           err instanceof Error ? err : new Error("Failed to fetch flags")
         );
+      } finally {
         setIsLoading(false);
       }
     };
