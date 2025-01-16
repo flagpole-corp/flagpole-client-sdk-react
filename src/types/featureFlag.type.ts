@@ -1,3 +1,5 @@
+import { Environment } from "./environment.type";
+
 export interface FeatureFlag {
   _id: string;
   name: string;
@@ -6,7 +8,7 @@ export interface FeatureFlag {
   project: string;
   organization: string;
   conditions: Record<string, any>;
-  environments: string[];
+  environments: Environment[];
   createdAt: string;
   updatedAt: string;
 }

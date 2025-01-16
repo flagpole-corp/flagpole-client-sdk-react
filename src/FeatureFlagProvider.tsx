@@ -1,19 +1,25 @@
-import React, { FC, useEffect, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import axios from "axios";
 import { FeatureFlagContext } from "./Context";
 import { FeatureFlag, FeatureFlagProviderProps } from "./types";
 import { DEFAULT_CONFIG } from "./config";
+import { ENVIRONMENTS } from "./types/environment.type";
 
 export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
   apiKey,
-  environment = "development",
+  environments,
   children,
 }): JSX.Element => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [flags, setFlags] = useState<Record<string, FeatureFlag>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  const activeEnvironments = useMemo(
+    () => environments || [...ENVIRONMENTS],
+    [environments]
+  );
 
   const api = axios.create({
     baseURL: DEFAULT_CONFIG.API_URL,
@@ -31,7 +37,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
           data.reduce((acc, flag) => {
             if (
               !flag.environments?.length ||
-              flag.environments.includes(environment)
+              flag.environments.some((env) => activeEnvironments.includes(env))
             ) {
               acc[flag.name] = flag;
             }
@@ -50,7 +56,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     };
 
     fetchFlags();
-  }, [environment]);
+  }, [activeEnvironments.join(",")]);
 
   // WebSocket connection
   useEffect(() => {
@@ -60,7 +66,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     const socketInstance = io(wsUrl, {
       auth: { apiKey }, // Use API key for socket auth
       query: {
-        environment,
+        environments: activeEnvironments.join(","),
       },
       forceNew: true,
       path: "/socket.io",
@@ -84,8 +90,8 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
 
     socketInstance.on("featureFlagUpdate", (updatedFlag: FeatureFlag) => {
       if (
-        !updatedFlag.environments ||
-        updatedFlag.environments.includes(environment)
+        !updatedFlag.environments?.length ||
+        updatedFlag.environments.some((env) => activeEnvironments.includes(env))
       ) {
         setFlags((prevFlags) => ({
           ...prevFlags,
@@ -112,11 +118,24 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     return () => {
       socketInstance.disconnect();
     };
-  }, [environment]);
+  }, [activeEnvironments.join(",")]);
 
-  const isFeatureEnabled = (flagName: string): boolean => {
-    return flags[flagName]?.isEnabled ?? false;
-  };
+  const isFeatureEnabled = useCallback(
+    (flagName: string): boolean => {
+      const flag = flags[flagName];
+      if (!flag) {
+        console.warn(`[FlagPole SDK] Flag "${flagName}" not found`);
+        return false;
+      }
+
+      return (
+        flag.isEnabled &&
+        (!flag.environments?.length ||
+          flag.environments.some((env) => activeEnvironments.includes(env)))
+      );
+    },
+    [flags, activeEnvironments]
+  );
 
   return (
     <FeatureFlagContext.Provider
