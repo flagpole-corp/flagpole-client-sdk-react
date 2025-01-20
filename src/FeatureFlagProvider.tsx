@@ -64,7 +64,7 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
     console.log("[FlagPole SDK] WS URL before initialization:", wsUrl);
 
     const socketInstance = io(wsUrl, {
-      auth: { apiKey }, // Use API key for socket auth
+      auth: { apiKey },
       query: {
         environments: activeEnvironments.join(","),
       },
