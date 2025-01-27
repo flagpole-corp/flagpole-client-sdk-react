@@ -8,8 +8,8 @@ const ENVIRONMENTS = {
     WS_URL: "wss://api.staging.useflagpole.dev",
   },
   production: {
-    API_URL: "https://api.useflagpole.dev",
-    WS_URL: "wss://api.useflagpole.dev",
+    API_URL: "https://useflagpole-api.onrender.com",
+    WS_URL: "wss://useflagpole-api.onrender.com",
   },
 } as const;
 
