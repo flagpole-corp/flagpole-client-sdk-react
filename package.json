@@ -16,7 +16,7 @@
     "type": "git",
     "url": "github.com:flagpole-corp/flagpole-client-sdk-react.git"
   },
-  "author": "FlagPole Cloud",
+  "author": "FlagPole Team",
   "license": "ISC",
   "peerDependencies": {
     "react": "^18.0.0",
