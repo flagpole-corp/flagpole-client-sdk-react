@@ -1,5 +1,5 @@
 {
-  "name": "@flagpole/client-react",
+  "name": "@flagpole/react",
   "version": "0.0.1",
   "description": "React SDK for integration with FlagPole api.",
   "main": "dist/index.js",
