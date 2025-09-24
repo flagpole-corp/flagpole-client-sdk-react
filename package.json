@@ -10,7 +10,10 @@
     "build": "npm run clean && tsc",
     "build:watch": "tsc --watch",
     "build:debug": "npm run clean && tsc --listFiles --listEmittedFiles --extendedDiagnostics",
-    "deploy": "rm -rf dist && npm run build && yalc publish --push"
+    "deploy": "rm -rf dist && npm run build && yalc publish --push",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish"
   },
   "repository": {
     "type": "git",
