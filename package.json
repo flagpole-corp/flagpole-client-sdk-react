@@ -1,6 +1,6 @@
 {
   "name": "@flagpole/react",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "React SDK for integration with FlagPole api.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
