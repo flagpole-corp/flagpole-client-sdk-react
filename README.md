@@ -1,4 +1,4 @@
-# @flagpole/client-react-sdk
+# @flagpole/react
 
 A React SDK for integrating feature flags into your application.
 
@@ -13,7 +13,7 @@ A React SDK for integrating feature flags into your application.
 ## Installation
 
 ```bash
-npm install @flagpole/client-react-sdk
+npm install @flagpole/react
 ```
 
 ## Usage
@@ -60,7 +60,7 @@ const { flags, isLoading, error, isFeatureEnabled } = useFeatureFlags();
 ### HOC Usage
 
 ```typescript
-import { withFeatureFlag } from "@flagpole/client-react-sdk";
+import { withFeatureFlag } from "@flagpole/react";
 
 const MyComponent = ({ title }) => <div>{title}</div>;
 
@@ -88,7 +88,7 @@ const FeatureFlaggedWithFallback = withFeatureFlag(
 
 ```bash
 git clone [repository-url]
-cd client-react-sdk
+cd @flagpole/react
 ```
 
 2. Install dependencies
@@ -121,7 +121,7 @@ yalc publish
 3. In your test project
 
 ```bash
-yalc add @flagpole/client-react-sdk
+yalc add @flagpole/react
 ```
 
 4. To update after making changes
