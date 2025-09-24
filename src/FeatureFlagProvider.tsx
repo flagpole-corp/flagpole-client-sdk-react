@@ -22,16 +22,24 @@ export const FeatureFlagProvider: FC<FeatureFlagProviderProps> = ({
   );
 
   const api = axios.create({
-    baseURL: DEFAULT_CONFIG.API_URL,
+    baseURL: `${DEFAULT_CONFIG.API_URL}/api`,
     headers: {
       "x-api-key": apiKey,
     },
+    withCredentials: false,
+  });
+
+  api.interceptors.request.use((config) => {
+    config.headers["Access-Control-Allow-Origin"] = "*";
+    config.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
+    config.headers["Access-Control-Allow-Headers"] = "Content-Type, x-api-key";
+    return config;
   });
 
   useEffect(() => {
     const fetchFlags = async () => {
       try {
-        const { data } = await api.get<FeatureFlag[]>("/api/feature-flags/sdk");
+        const { data } = await api.get<FeatureFlag[]>("/feature-flags/sdk");
 
         setFlags(
           data.reduce((acc, flag) => {
